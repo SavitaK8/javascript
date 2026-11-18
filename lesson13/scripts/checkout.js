@@ -1,4 +1,4 @@
-import { cart, removeFromCart } from "../data/cart.js";
+import { cart, removeFromCart, updateQuantity } from "../data/cart.js";
 import { products } from "../data/products.js";
 import { formatCurrency } from "./utils/money.js";
 
@@ -8,18 +8,19 @@ console.log(cart);
 
 cart.forEach((cartItem) => {
 
-    const productId = cartItem.productId;
+  const productId = cartItem.productId;
 
-    let matchingProduct;
+  let matchingProduct;
 
-    products.forEach((product) => {
-      if(product.id === productId) {
-        matchingProduct = product;
-      }
-    });
+  products.forEach((product) => {
+    if (product.id === productId) {
+      matchingProduct = product;
+    }
+  });
 
-    cartSummaryHTML +=  `<div class="cart-item-container">
-    <div class="cart-item-container js-cart-item-container-${matchingProduct.id}">
+  if (!matchingProduct) return;
+
+  cartSummaryHTML += `<div class="cart-item-container js-cart-item-container-${matchingProduct.id}">
         <div class="delivery-date">
           Delivery date: Tuesday, June 21
         </div>
@@ -37,14 +38,16 @@ cart.forEach((cartItem) => {
             </div>
             <div class="product-quantity">
               <span>
-                Quantity: <span class="quantity-label">${cartItem.quantity}</span>
+                Quantity: <span class="quantity-label js-quantity-label-${matchingProduct.id}">${cartItem.quantity}</span>
+                <input class="quantity-input js-quantity-input-${matchingProduct.id}"
+                  type="number" min="1" max="99" value="${cartItem.quantity}">
               </span>
-              <span class="update-quantity-link link-primary">
-                Update
-              </span>
-              <span class="delete-quantity-link link-primary js-delete-link" data-product-id="${matchingProduct.id}">
-                Delete
-              </span>
+              <span class="update-quantity-link link-primary js-update-link"
+                data-product-id="${matchingProduct.id}">Update</span>
+              <span class="save-quantity-link link-primary js-save-link"
+                data-product-id="${matchingProduct.id}">Save</span>
+              <span class="delete-quantity-link link-primary js-delete-link"
+                data-product-id="${matchingProduct.id}">Delete</span>
             </div>
           </div>
 
@@ -54,7 +57,8 @@ cart.forEach((cartItem) => {
             </div>
             <div class="delivery-option">
               <input type="radio" checked
-                class="delivery-option-input"
+                class="delivery-option-input js-delivery-input"
+                data-shipping-cents="0"
                 name="delivery-option-${matchingProduct.id}">
               <div>
                 <div class="delivery-option-date">
@@ -67,7 +71,8 @@ cart.forEach((cartItem) => {
             </div>
             <div class="delivery-option">
               <input type="radio"
-                class="delivery-option-input"
+                class="delivery-option-input js-delivery-input"
+                data-shipping-cents="499"
                 name="delivery-option-${matchingProduct.id}">
               <div>
                 <div class="delivery-option-date">
@@ -80,7 +85,8 @@ cart.forEach((cartItem) => {
             </div>
             <div class="delivery-option">
               <input type="radio"
-                class="delivery-option-input"
+                class="delivery-option-input js-delivery-input"
+                data-shipping-cents="999"
                 name="delivery-option-${matchingProduct.id}">
               <div>
                 <div class="delivery-option-date">
@@ -96,13 +102,78 @@ cart.forEach((cartItem) => {
       </div>`
 });
 
+function updatePaymentSummary() {
+  let itemsCents = 0;
+  let quantity = 0;
+
+  cart.forEach((cartItem) => {
+    const product = products.find((p) => p.id === cartItem.productId);
+    if (!product) return;
+    itemsCents += product.priceCents * cartItem.quantity;
+    quantity += cartItem.quantity;
+  });
+
+  let shippingCents = 0;
+  document.querySelectorAll('.js-delivery-input:checked').forEach((input) => {
+    shippingCents += Number(input.dataset.shippingCents);
+  });
+
+  const beforeTaxCents = itemsCents + shippingCents;
+  const taxCents = Math.round(beforeTaxCents * 0.1);
+  const totalCents = beforeTaxCents + taxCents;
+
+  document.querySelector('.js-return-to-home-link').innerHTML =
+    `${quantity} ${quantity === 1 ? 'item' : 'items'}`;
+  document.querySelector('.js-items-label').innerHTML = `Items (${quantity}):`;
+  document.querySelector('.js-items-total').innerHTML = `$${formatCurrency(itemsCents)}`;
+  document.querySelector('.js-shipping-total').innerHTML = `$${formatCurrency(shippingCents)}`;
+  document.querySelector('.js-subtotal').innerHTML = `$${formatCurrency(beforeTaxCents)}`;
+  document.querySelector('.js-tax').innerHTML = `$${formatCurrency(taxCents)}`;
+  document.querySelector('.js-total').innerHTML = `$${formatCurrency(totalCents)}`;
+}
+
 document.querySelector('.js-order-summary').innerHTML = cartSummaryHTML;
 
 document.querySelectorAll('.js-delete-link').forEach((link) => {
-  link.addEventListener('click' , () => {
+  link.addEventListener('click', () => {
     const productId = link.dataset.productId;
     removeFromCart(productId);
-    const container = document.querySelector(`.js-cart-item-container-${productId}`);
-    container.remove();
+    updatePaymentSummary();
+    document.querySelector(`.js-cart-item-container-${productId}`).remove();
+    
   });
 });
+
+document.querySelectorAll('.js-update-link').forEach((link) => {
+  link.addEventListener('click', () => {
+    const productId = link.dataset.productId;
+    document.querySelector(`.js-cart-item-container-${productId}`)
+      .classList.add('is-editing-quantity');
+  });
+});
+
+document.querySelectorAll('.js-save-link').forEach((link) => {
+  link.addEventListener('click', () => {
+    const productId = link.dataset.productId;
+    const input = document.querySelector(`.js-quantity-input-${productId}`);
+    const newQuantity = Number(input.value);
+
+    if (!Number.isInteger(newQuantity) || newQuantity < 1 || newQuantity > 99) {
+      alert('Quantity must be a whole number from 1 to 99');
+      return;
+    }
+
+    updateQuantity(productId, newQuantity);
+    document.querySelector(`.js-quantity-label-${productId}`).innerHTML = newQuantity;
+    document.querySelector(`.js-cart-item-container-${productId}`)
+      .classList.remove('is-editing-quantity');
+    updatePaymentSummary();
+  });
+});
+
+document.querySelectorAll('.js-delivery-input').forEach((input) => {
+  input.addEventListener('change', updatePaymentSummary);
+});
+
+updatePaymentSummary();
+
