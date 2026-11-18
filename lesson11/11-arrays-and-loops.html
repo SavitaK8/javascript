@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arrays and Loops</title>
+</head>
+
+<body>
+  
+</body>
+
+<script>
+
+  /* Arrays are references in js */
+
+
+  const arr = [1, 'hello', true, {name : 'socks'}, [1, 2]];
+  console.log(arr);
+
+  console.log(typeof [1, 2]);
+  console.log(Array.isArray([1, 2]));
+
+  console.log(arr.length);
+
+  arr.push(100);
+  console.log(arr);
+
+  arr.splice(0, 2);
+   console.log(arr);
+
+   const array1 = [1, 2, 3];
+   const array2 = array1.slice();
+
+   array2.push(4);
+
+   console.log(array1);
+   console.log(array2);
+
+   const [firstValue , secondValue] = [1, 2, 3];
+
+</script>
+</html>         
