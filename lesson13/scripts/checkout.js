@@ -136,7 +136,8 @@ function updatePaymentSummary() {
   document.querySelector('.js-total').innerHTML = `$${formatCurrency(totalCents)}`;
 }
 
-document.querySelector('.js-order-summary').innerHTML = cartSummaryHTML;
+const emptyCartHTML ='<div class="empty-cart-message">Your cart is empty. <a href="amazon.html">Continue shopping</a></div>';
+document.querySelector('.js-order-summary').innerHTML = cartSummaryHTML || emptyCartHTML;
 
 document.querySelectorAll('.js-delete-link').forEach((link) => {
   link.addEventListener('click', () => {

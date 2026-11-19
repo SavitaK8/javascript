@@ -19,25 +19,8 @@ export function addToCart(productId, quantity = 1) {
 }
 
 export function removeFromCart(productId) {
-  const newCart = [];
-
-  cart.forEach((cartItem) => {
-    if(cartItem.productId !== productId) {
-      newCart.push(cartItem);
-    }
-  });
-
-  cart = newCart;
-
+  cart = cart.filter((cartItem) => cartItem.productId !== productId);
   saveToStorage();
-
-  if (cart.length === 0) {
-
-  const emptyCartHTML ='<div class="empty-cart-message">Your cart is empty. <a href="amazon.html">Continue shopping</a></div>';
-
-  document.querySelector('.js-order-summary').innerHTML = cartSummaryHTML || emptyCartHTML;
-  
-  }
 }
 
 export function updateQuantity(productId, newQuantity) {
@@ -57,6 +40,8 @@ export function updateDeliveryOption(productId, deliveryOptionId) {
       matchingItem = cartItem;
     }
   });
+
+  if (!matchingItem) return;
 
   matchingItem.deliveryOptionId = deliveryOptionId;
 
