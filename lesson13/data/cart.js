@@ -1,29 +1,21 @@
+
+
 export let cart = JSON.parse(localStorage.getItem('cart')) || [];
 
 function saveToStorage() {
   localStorage.setItem('cart', JSON.stringify(cart));
 } 
 
-export function addToCart(productId, quantity=1) {
+export function addToCart(productId, quantity = 1) {
+  const matchingItem = cart.find((cartItem) => cartItem.productId === productId);
 
-  let matchingItem;
+  if (matchingItem) {
+    matchingItem.quantity += quantity;
+  } else {
+    cart.push({ productId, quantity, deliveryOptionId: null });
+  }
 
-    cart.forEach((cartItem) => {
-      if(productId == cartItem.productId) {
-        matchingItem = cartItem;
-      }
-    });
-
-    if(matchingItem) {
-      matchingItem.quantity += quantity;
-    } else {
-      cart.push({
-        productId : productId,
-        quantity : quantity
-      });
-    }
-
-    saveToStorage();
+  saveToStorage();
 }
 
 export function removeFromCart(productId) {
@@ -40,8 +32,11 @@ export function removeFromCart(productId) {
   saveToStorage();
 
   if (cart.length === 0) {
-  document.querySelector('.js-order-summary').innerHTML =
-    '<div class="empty-cart-message">Your cart is empty. <a href="amazon.html">Continue shopping</a></div>';
+
+  const emptyCartHTML ='<div class="empty-cart-message">Your cart is empty. <a href="amazon.html">Continue shopping</a></div>';
+
+  document.querySelector('.js-order-summary').innerHTML = cartSummaryHTML || emptyCartHTML;
+  
   }
 }
 
@@ -52,3 +47,19 @@ export function updateQuantity(productId, newQuantity) {
     saveToStorage();
   }
 }
+
+export function updateDeliveryOption(productId, deliveryOptionId) {
+
+  let matchingItem;
+
+  cart.forEach((cartItem) => {
+    if(productId == cartItem.productId) {
+      matchingItem = cartItem;
+    }
+  });
+
+  matchingItem.deliveryOptionId = deliveryOptionId;
+
+  saveToStorage();
+
+};

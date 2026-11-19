@@ -1,10 +1,17 @@
-import { cart, removeFromCart, updateQuantity } from "../data/cart.js";
+import { cart, removeFromCart, updateQuantity, updateDeliveryOption } from "../data/cart.js";
 import { products } from "../data/products.js";
 import { formatCurrency } from "./utils/money.js";
+// export default so no {}-named import syntax
+import dayjs from "https://unpkg.com/supersimpledev@8.5.0/dayjs/esm/index.js";
+import { deliveryOptions } from "../data/deliveryOptions.js"
 
 let cartSummaryHTML = "";
 
-console.log(cart);
+function deliveryHeading(option) {
+  if (!option) return 'Choose a delivery option';
+  const date = dayjs().add(option.deliveryDays, 'days').format('dddd, MMMM D');
+  return `Delivery date: ${date}`;
+}
 
 cart.forEach((cartItem) => {
 
@@ -18,11 +25,14 @@ cart.forEach((cartItem) => {
     }
   });
 
-  if (!matchingProduct) return;
+  if (!matchingProduct) return; 
+
+  const deliveryOption = deliveryOptions.find((o) => o.id === cartItem.deliveryOptionId);
+  
 
   cartSummaryHTML += `<div class="cart-item-container js-cart-item-container-${matchingProduct.id}">
         <div class="delivery-date">
-          Delivery date: Tuesday, June 21
+          ${deliveryHeading(deliveryOption)}
         </div>
 
         <div class="cart-item-details-grid">
@@ -55,67 +65,61 @@ cart.forEach((cartItem) => {
             <div class="delivery-options-title">
               Choose a delivery option:
             </div>
-            <div class="delivery-option">
-              <input type="radio" checked
-                class="delivery-option-input js-delivery-input"
-                data-shipping-cents="0"
-                name="delivery-option-${matchingProduct.id}">
-              <div>
-                <div class="delivery-option-date">
-                  Tuesday, June 21
-                </div>
-                <div class="delivery-option-price">
-                  FREE Shipping
-                </div>
-              </div>
-            </div>
-            <div class="delivery-option">
-              <input type="radio"
-                class="delivery-option-input js-delivery-input"
-                data-shipping-cents="499"
-                name="delivery-option-${matchingProduct.id}">
-              <div>
-                <div class="delivery-option-date">
-                  Wednesday, June 15
-                </div>
-                <div class="delivery-option-price">
-                  $4.99 - Shipping
-                </div>
-              </div>
-            </div>
-            <div class="delivery-option">
-              <input type="radio"
-                class="delivery-option-input js-delivery-input"
-                data-shipping-cents="999"
-                name="delivery-option-${matchingProduct.id}">
-              <div>
-                <div class="delivery-option-date">
-                  Monday, June 13
-                </div>
-                <div class="delivery-option-price">
-                  $9.99 - Shipping
-                </div>
-              </div>
-            </div>
+            ${deliveryOptionHTML(matchingProduct, cartItem)}
           </div>
         </div>
       </div>`
 });
 
+function deliveryOptionHTML(matchingProduct, cartItem) {
+
+  let html = '';
+  deliveryOptions.forEach((deliveryOption) => {
+
+    const today = dayjs();
+    const deliveryDate = today.add(deliveryOption.deliveryDays, 'days');
+    const dateString = deliveryDate.format('dddd, MMMM D');
+    const priceString = deliveryOption.priceCents === 0? 'FREE' : `$${formatCurrency(deliveryOption.priceCents)}`; 
+    
+    const isChecked = deliveryOption.id === cartItem.deliveryOptionId;
+
+    html += `<div class="delivery-option js-delivery-option"
+    data-product-id="${matchingProduct.id}" data-delivery-option-id="${deliveryOption.id}">
+        
+        
+        <input type="radio" ${isChecked ? 'checked' : ''}
+          autocomplete="off"
+          class="delivery-option-input js-delivery-input"
+          name="delivery-option-${matchingProduct.id}">
+        <div>
+          <div class="delivery-option-date">
+            ${dateString}
+          </div>
+          <div class="delivery-option-price">
+            ${priceString} - Shipping
+          </div>
+        </div>
+     </div>`
+  });
+
+  return html;
+}
+
 function updatePaymentSummary() {
   let itemsCents = 0;
+  let shippingCents = 0;
   let quantity = 0;
 
   cart.forEach((cartItem) => {
     const product = products.find((p) => p.id === cartItem.productId);
     if (!product) return;
-    itemsCents += product.priceCents * cartItem.quantity;
-    quantity += cartItem.quantity;
-  });
 
-  let shippingCents = 0;
-  document.querySelectorAll('.js-delivery-input:checked').forEach((input) => {
-    shippingCents += Number(input.dataset.shippingCents);
+    const option = deliveryOptions.find((o) => o.id === cartItem.deliveryOptionId);
+
+    itemsCents += product.priceCents * cartItem.quantity;
+    shippingCents += option ? option.priceCents : 0;
+    quantity += cartItem.quantity;
+
   });
 
   const beforeTaxCents = itemsCents + shippingCents;
@@ -140,6 +144,9 @@ document.querySelectorAll('.js-delete-link').forEach((link) => {
     removeFromCart(productId);
     updatePaymentSummary();
     document.querySelector(`.js-cart-item-container-${productId}`).remove();
+    if (cart.length === 0) {
+    document.querySelector('.js-order-summary').innerHTML = emptyCartHTML;
+    }
     
   });
 });
@@ -171,8 +178,19 @@ document.querySelectorAll('.js-save-link').forEach((link) => {
   });
 });
 
-document.querySelectorAll('.js-delivery-input').forEach((input) => {
-  input.addEventListener('change', updatePaymentSummary);
+document.querySelectorAll('.js-delivery-option').forEach((element) => {
+  element.addEventListener('click', () => {
+    const { productId, deliveryOptionId } = element.dataset;
+    updateDeliveryOption(productId, deliveryOptionId);
+
+    element.querySelector('.js-delivery-input').checked = true;
+
+    const option = deliveryOptions.find((o) => o.id === deliveryOptionId);
+    document.querySelector(`.js-cart-item-container-${productId} .delivery-date`)
+      .innerHTML = deliveryHeading(option);
+
+    updatePaymentSummary();
+  });
 });
 
 updatePaymentSummary();
