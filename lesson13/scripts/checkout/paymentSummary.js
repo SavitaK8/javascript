@@ -23,12 +23,41 @@ export function renderPaymentSummary() {
   const taxCents = Math.round(beforeTaxCents * 0.1);
   const totalCents = beforeTaxCents + taxCents;
 
-  document.querySelector('.js-return-to-home-link').innerHTML =
-    `${quantity} ${quantity === 1 ? 'item' : 'items'}`;
-  document.querySelector('.js-items-label').innerHTML = `Items (${quantity}):`;
-  document.querySelector('.js-items-total').innerHTML = `$${formatCurrency(itemsCents)}`;
-  document.querySelector('.js-shipping-total').innerHTML = `$${formatCurrency(shippingCents)}`;
-  document.querySelector('.js-subtotal').innerHTML = `$${formatCurrency(beforeTaxCents)}`;
-  document.querySelector('.js-tax').innerHTML = `$${formatCurrency(taxCents)}`;
-  document.querySelector('.js-total').innerHTML = `$${formatCurrency(totalCents)}`;
+  const paymentSummaryHTML = `
+    <div class="payment-summary-title">Order Summary</div>
+
+    <div class="payment-summary-row">
+      <div>Items (${quantity}):</div>
+      <div class="payment-summary-money">$${formatCurrency(itemsCents)}</div>
+    </div>
+
+    <div class="payment-summary-row">
+      <div>Shipping &amp; handling:</div>
+      <div class="payment-summary-money">$${formatCurrency(shippingCents)}</div>
+    </div>
+
+    <div class="payment-summary-row subtotal-row">
+      <div>Total before tax:</div>
+      <div class="payment-summary-money">$${formatCurrency(beforeTaxCents)}</div>
+    </div>
+
+    <div class="payment-summary-row">
+      <div>Estimated tax (10%):</div>
+      <div class="payment-summary-money">$${formatCurrency(taxCents)}</div>
+    </div>
+
+    <div class="payment-summary-row total-row">
+      <div>Order total:</div>
+      <div class="payment-summary-money">$${formatCurrency(totalCents)}</div>
+    </div>
+
+    <button class="place-order-button button-primary">Place your order</button>
+  `;
+
+  document.querySelector('.js-payment-summary').innerHTML = paymentSummaryHTML;
+
+  const headerLink = document.querySelector('.js-return-to-home-link');
+  if (headerLink) {
+    headerLink.innerHTML = `${quantity} ${quantity === 1 ? 'item' : 'items'}`;
+  }
 }
