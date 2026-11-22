@@ -64,6 +64,35 @@ logThis.call('hello');
 
 export let products = [];
 
+export function fetchProducts() {
+  
+  const promise = fetch(
+    'https://supersimplebackend.dev/products'
+  ).then((response) => {
+    return response.json();
+  }).then((productsData) => {
+    products = productsData.map((productDetails) => {
+
+    if(productDetails.type === 'clothing') {
+      return new Clothing(productDetails);
+    }
+
+    return new Product(productDetails);
+    });
+
+
+    console.log('load products');
+  });
+
+  return promise;
+}
+
+/*
+
+fetchProducts().then(() => {
+  console.log('next');
+});
+
 export function loadProducts(fun) {
   const xhr = new XMLHttpRequest();
 
@@ -87,7 +116,6 @@ export function loadProducts(fun) {
   xhr.send();
 }
 
-/*
 export const products = [
   {
     id: "e43638ce-6aa0-4b85-b27f-e1d07eb678c6",
