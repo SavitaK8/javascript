@@ -66,7 +66,7 @@ export let products = [];
 
 export function fetchProducts() {
   
-  const promise = fetch(
+  const promise =  fetch(
     'https://supersimplebackend.dev/products'
   ).then((response) => {
     return response.json();
@@ -85,6 +85,7 @@ export function fetchProducts() {
   });
 
   return promise;
+
 }
 
 /*
