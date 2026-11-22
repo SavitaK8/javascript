@@ -23,7 +23,13 @@ Promise.all([
 
 async function loadPage() {
 
-  await fetchProducts();
+  // throw 'error1';
+  try {
+    await fetchProducts();
+  } catch(error) {
+    console.log('Unexpected error');
+  }
+  
   renderOrderSummary();
   renderPaymentSummary();
 
